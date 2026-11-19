@@ -613,6 +613,11 @@ main{padding:24px var(--gutter) 56px;min-width:0}
 .al-num b{display:block;font-size:28px;line-height:34px;color:var(--text);font-weight:600;letter-spacing:-.02em}
 .al-txt h2{font-size:clamp(24px,3.4vw,38px);line-height:1.1;letter-spacing:-.02em}
 .al-meta{color:var(--accent);font-size:13px;margin:6px 0 8px}
+.al-st{display:inline-flex;align-items:center;gap:7px;height:24px;padding:0 10px;margin-bottom:10px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.02em;color:#eee;background:rgba(14,14,13,.75);border:1px solid #3a3a38}
+.al-st::before{content:"";width:7px;height:7px;border-radius:50%;background:#8a8a86}
+.al-st.complete{border-color:#1f5c54}.al-st.complete::before{background:#3fd0bd}
+.al-st.active{border-color:#5c4a1f}.al-st.active::before{background:#e5a93b}
+.al-st.planned::before{background:#8a8a86}.al-st.hold::before{background:transparent;border:1.5px solid #8a8a86;box-sizing:border-box}
 .al-txt p{color:#cfcfcb;margin:0}
 .al-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .al-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;border:1px solid #3a3a38;background:rgba(14,14,13,.7);font-size:13px;color:#eee}
@@ -3135,6 +3140,9 @@ main{padding:24px var(--gutter) 56px;min-width:0}
   const ICON_ZOOM = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8.5v5M8.5 11h5"/></svg>`;
   const ICON_STACK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/></svg>`;
 
+  // shooting status shown on each album photo (album words differ from the Targets list: "active" reads as In progress)
+  const AL_STATUS = {complete:"Complete", active:"In progress", planned:"Planned", hold:"On hold"};
+  const alStatus = r => { const s = AL_STATUS[r.status] ? r.status : "active"; return `<span class="al-st ${s}">${AL_STATUS[s]}</span>`; };
   let albumOff = null;
   function renderAlbum(){
     const list = albumList();
@@ -3148,7 +3156,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
         return `<section class="al-sec" id="al-${esc(r.id)}" aria-label="${esc(r.name)}">
         <button type="button" class="al-ph" data-av="${esc(r.id)}" aria-label="Explore ${esc(r.name)} in detail"><img src="${esc(blob(coverOf(r)))}" alt="${esc(r.name)}, photographed by me" loading="${i<2?"eager":"lazy"}"></button>
         <div class="al-txt"><div class="al-num num"><b>${n1(total(r))}</b>hours spent <br>collecting its light</div>
-          <div><h2>${esc(r.name)}</h2><div class="al-meta">${esc(r.constellation)}${f ? ` · ${f.toLocaleString("en-US")} frames` : ""}${r.status !== "complete" ? " · in progress" : ""}</div>
+          <div>${alStatus(r)}<h2>${esc(r.name)}</h2><div class="al-meta">${esc(r.constellation)}${f ? ` · ${f.toLocaleString("en-US")} frames` : ""}</div>
           ${r.about && r.about.seeing ? `<p>${esc(firstSentence(r.about.seeing))}</p>` : ""}
           <div class="al-acts"><button type="button" class="al-btn" data-av="${esc(r.id)}">${ICON_ZOOM}${lay ? "Explore and label" : "Explore the detail"}</button>${st.length ? `<button type="button" class="al-btn" data-stack="${esc(r.id)}">${ICON_STACK}See 1 frame become ${esc(Number(st[st.length-1].frames).toLocaleString("en-US"))}</button>` : ""}<button type="button" class="al-btn lnk" data-info="${esc(r.id)}">Details</button></div></div></div></section>`; }).join("")}</div></div>`;
     const al = $(".al"), log = $(".al-log"), hint = $(".al-hint"), dots = [...document.querySelectorAll(".al-dots button")];
@@ -3190,7 +3198,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
                                       : `<button type="button" class="al-btn" data-g="arrange">Arrange</button>`) : ""}
         <button type="button" class="al-btn" data-g="close" aria-label="Close">Close</button></header>
         ${arranging ? `<p style="max-width:1200px;margin:-6px auto 14px;color:#b4b4b4;font-size:13px">Use the arrows to move photos earlier or later. Everyone sees this order once you save.</p>` : ""}
-        <ol class="al-tiles">${list.map((r,i) => `<li><button type="button" class="al-tile" data-gi="${i}"${arranging ? " tabindex=\"-1\"" : ""}><img src="${esc(blob(coverOf(r)))}" alt="" loading="lazy"><span>${esc(r.name)}<small>${n1(total(r))} hours${r.status !== "complete" ? " · in progress" : ""}</small></span></button>
+        <ol class="al-tiles">${list.map((r,i) => `<li><button type="button" class="al-tile" data-gi="${i}"${arranging ? " tabindex=\"-1\"" : ""}><img src="${esc(blob(coverOf(r)))}" alt="" loading="lazy"><span>${esc(r.name)}<small>${n1(total(r))} hours · ${AL_STATUS[r.status] || "In progress"}</small></span></button>
           ${arranging ? `<span class="al-n">${i + 1}</span><span class="al-mv"><button type="button" data-mv="-1" data-gi="${i}" aria-label="Move ${esc(r.name)} earlier"${i ? "" : " disabled"}>◀</button><button type="button" data-mv="1" data-gi="${i}" aria-label="Move ${esc(r.name)} later"${i < list.length - 1 ? "" : " disabled"}>▶</button></span>` : ""}</li>`).join("")}</ol>`;
     };
     const close = () => { g.remove(); document.removeEventListener("keydown", kd, true); };
