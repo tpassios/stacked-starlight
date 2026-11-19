@@ -617,7 +617,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
 .al-st::before{content:"";width:7px;height:7px;border-radius:50%;background:#8a8a86}
 .al-st.complete{border-color:#1f5c54}.al-st.complete::before{background:#3fd0bd}
 .al-st.active{border-color:#5c4a1f}.al-st.active::before{background:#e5a93b}
-.al-st.planned::before{background:#8a8a86}.al-st.hold::before{background:transparent;border:1.5px solid #8a8a86;box-sizing:border-box}
+.al-st.hold::before{background:transparent;border:1.5px solid #8a8a86;box-sizing:border-box}
 .al-txt p{color:#cfcfcb;margin:0}
 .al-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .al-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border-radius:999px;border:1px solid #3a3a38;background:rgba(14,14,13,.7);font-size:13px;color:#eee}
@@ -835,6 +835,9 @@ main{padding:24px var(--gutter) 56px;min-width:0}
 .av-top .av-i{all:unset;cursor:pointer;height:34px;padding:0 14px;border-radius:999px;border:1px solid #3a3a38;font-size:13px;color:#eee;display:inline-flex;align-items:center;gap:6px}
 .av-top .av-i[aria-pressed="true"]{background:#eee;color:#111;border-color:#eee}
 .av-top .av-i:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.av-top .av-fp{height:34px;padding:0 14px 0 12px;border-radius:999px;border:1px solid #3a3a38;font-size:13px;color:#eee;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.av-top .av-fp:hover{border-color:#6a6a66}.av-top .av-fp:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.av-top .av-fp svg{width:16px;height:16px}
 .av-body{grid-column:1;transition:margin-right .25s ease}
 .av.info-on .av-body{margin-right:min(400px,40vw)}
 .av-info{grid-row:3;grid-column:1;justify-self:end;align-self:stretch;position:relative;min-height:0;width:min(400px,40vw);z-index:8;background:#0b0b0a;border-left:1px solid #222;overflow-y:auto;padding:20px 22px 40px;transform:translateX(100%);transition:transform .25s ease;color:#ddd;font-size:14px;line-height:21px}
@@ -851,6 +854,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
   .av.info-on .av-body{margin-right:0}
   .av-info{justify-self:stretch;align-self:end;width:auto;height:62%;border-left:0;border-top:1px solid #222;border-radius:16px 16px 0 0;transform:translateY(100%)}
   .av-top .av-i span{display:none}
+  .av-top .av-fp span{display:none}.av-top .av-fp{width:34px;padding:0;justify-content:center}
 }
 </style>
 
@@ -3141,7 +3145,8 @@ main{padding:24px var(--gutter) 56px;min-width:0}
   const ICON_STACK = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4-8 4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/></svg>`;
 
   // shooting status shown on each album photo (album words differ from the Targets list: "active" reads as In progress)
-  const AL_STATUS = {complete:"Complete", active:"In progress", planned:"Planned", hold:"On hold"};
+  // no "Planned" here (the owner, 2026-11-19): any target could be planned; a planned target that already has a photo reads as In progress
+  const AL_STATUS = {complete:"Complete", active:"In progress", hold:"On hold"};
   const alStatus = r => { const s = AL_STATUS[r.status] ? r.status : "active"; return `<span class="al-st ${s}">${AL_STATUS[s]}</span>`; };
   let albumOff = null;
   function renderAlbum(){
@@ -3333,6 +3338,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
     v.innerHTML = `<div class="av-top"><button type="button" class="av-x" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       <div class="av-t"><b></b><span></span></div>
       <button type="button" class="av-i" aria-pressed="false" aria-controls="av-info"><svg viewBox="0 0 24 24" width="16" height="16" style="stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg><span>Details</span></button>
+      <a class="av-fp" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span>Full page</span></a>
       <button type="button" class="av-p" aria-label="Previous photo"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><button type="button" class="av-n" aria-label="Next photo"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>
       <div class="av-body"></div><div class="av-dock"></div><aside class="av-info" id="av-info" aria-label="Details"></aside>`;
     document.body.append(v);
@@ -3354,6 +3360,7 @@ main{padding:24px var(--gutter) 56px;min-width:0}
       deep = false; body.classList.remove("nohot"); if(z){ z.destroy(); z = null; } urls.forEach(u => URL.revokeObjectURL(u)); urls = []; closeTip();
       const lay = layersOf(r), hots = hotsOf(r), full = fullOf(r), lays = lay ? LAYERS.filter(([key]) => lay[key]) : [], S = stagesOf(r), LK = looksOf(r);
       v.querySelector(".av-t b").textContent = r.name;
+      const fp = v.querySelector(".av-fp"); fp.href = `#t-${r.id}`; fp.setAttribute("aria-label", `Open the full page for ${r.name}`);
       v.querySelector(".av-t span").textContent = `${r.constellation} · ${n1(total(r))} hours spent collecting its light`;
       if(v.classList.contains("info-on")) paintInfo();
       body.innerHTML = `<div class="av-layer"><img class="base" alt="${esc(r.name)}, photographed by me" src="${esc(blob(r.image))}">${lays.map(([key]) => `<img class="ov" data-k="${key}" alt="" src="${esc(blob(lay[key]))}" data-full="${lay[key + "Full"] ? esc(blob(lay[key + "Full"])) : ""}">`).join("")}
@@ -3427,6 +3434,8 @@ main{padding:24px var(--gutter) 56px;min-width:0}
     const kd = e => { if(e.key === "Escape") close(); else if(e.key === "ArrowRight") show(k + 1); else if(e.key === "ArrowLeft") show(k - 1); else if(!(z && z.key(e))) return; e.preventDefault(); e.stopPropagation(); };
     document.addEventListener("keydown", kd, true);
     v.querySelector(".av-x").addEventListener("click", close);
+    // "Full page" links (top bar and end of Details) leave the viewer: close it so the page underneath shows
+    v.addEventListener("click", e => { if(e.target.closest('a[href^="#t-"]')) close(); });
     v.querySelector(".av-p").addEventListener("click", () => show(k - 1));
     v.querySelector(".av-n").addEventListener("click", () => show(k + 1));
     let infoPref = false; try{ infoPref = localStorage.getItem("tl-info") === "1"; }catch(_){}
